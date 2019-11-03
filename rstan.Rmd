@@ -1,0 +1,139 @@
+---
+title: "rstan"
+author: "Xinyi Lin"
+date: "10/28/2019"
+output: html_document
+---
+
+```{r}
+library(rstan)
+library(tidyverse)
+```
+
+```{r}
+options(mc.cores = parallel::detectCores())
+
+rstan_options(auto_write = TRUE)
+```
+
+## Session 1
+
+### part 1
+
+Simulate data
+
+```{r}
+set.seed(1)
+n = 30
+beta0 = 10
+beta1 = 5
+sigma = 2
+x = rnorm(n, mean = 10)
+epsilon = rnorm(n)
+y = beta0 + beta1*x + epsilon
+plot(y~x)
+```
+
+Run stan model
+
+```{r}
+stan_data = list(N = 30, x = x, y = y)
+stan_fit = stan(file = "./Bayesian Computation/1LinearRegression.stan", data = stan_data, warmup = 500, iter = 1000, chains = 4, seed = 1)
+print(stan_fit)
+posterior = rstan::extract(stan_fit)
+```
+
+fit `lm` function to test estimators get through stan.
+
+```{r}
+lm1.model = lm(y~x)
+summary(lm1.model)
+
+posterior_est = data.frame(iter = 1:2000, beta0 = posterior$beta0, beta1 = posterior$beta1, sigma = posterior$sigma) %>% 
+  gather(key = "parameter", value = "value", beta0:sigma)
+  
+
+posterior_est %>% 
+  ggplot(aes(x = iter, y = value, color = parameter)) +
+  geom_line()
+
+traceplot(stan_fit)
+```
+
+### part 2
+
+Changing our priors
+
+Prameters in .stan file for norm is different(second parameter in .stan is se)
+
+```{r}
+stan_data = list(N = 30, x = model.matrix(~x), y = y, K = 2) # K-dimension of predictors
+stan_fit2 = stan(file = "./Bayesian Computation/2LinearRegression.stan", data = stan_data, warmup = 500, iter = 1000, chains = 4, seed = 1)
+print(stan_fit2)
+```
+
+### Part 4
+
+```{r}
+stan_fit3 = stan(file = "./Bayesian Computation/3LinearRegression.stan", data = stan_data, warmup = 500, iter = 1000, chains = 4, seed = 1)
+y_rep = as.matrix(stan_fit3, pars = "y_rep")
+dim(y_rep)
+```
+
+## Session 2: Binomial outcome and hierarchical model
+
+```{r}
+y = c(6, 1, 10, 0, 11, 1, 0, 1, 11, 0, 6, 0, 9, 11, 25, 1)
+S = c(17, 7, 25, 1, 20, 3, 3, 1, 27, 3, 16, 0, 23, 14, 39, 4)
+Drug = rep(c("Erlotinib", "Erlotinib+bexaorotane", "Vandetanib", "Sorafenib"), each = 4)
+Marker = rep(c("EGFR", "KRAS/BRAF", "VEGF", "RXR/Cyclin D1"), times = 4)
+mydata = data.frame(y, S, Drug, Marker)
+mydata1 = mydata[which(mydata$Marker == "EGFR"),]
+```
+
+### Part 1
+
+Binomial 
+
+```{r}
+stan_data = list(N = 4, y = mydata1$y, S = mydata1$S)
+stan_fit1a = stan(file = "./Bayesian Computation/1aBinomial.stan", data = stan_data,warmup = 500, iter = 1000, chains = 4, seed = 1)
+print(stan_fit1a)
+```
+
+# Logistic regression model
+
+```{r}
+stan_data = list(N = 4, X = model.matrix(~Drug, data = mydata1), y = mydata1$y,S = mydata1$S, D = 4)
+stan_fit1b = stan(file = "./Bayesian Computation/1bLogisticRegression.stan", data = stan_data,warmup = 500, iter = 1000, chains = 4, seed = 1)
+print(stan_fit1b)
+posterior1b = rstan::extract(stan_fit1b)
+```
+
+### Part 3:Binomial outcome with different prior
+
+```{r}
+stan_data = list(N = 4, X = model.matrix(~Drug, data = mydata1),y = mydata1$y, S = mydata1$S, D = 4)
+stan_fit2 = stan(file = "./Bayesian Computation/2LogisticRegression.stan", data = stan_data,warmup = 500, iter = 1000, chains = 4, seed = 1)
+print(stan_fit2)
+```
+
+### Part3: Hierarchical model
+
+Binomial model
+
+```{r}
+mydata2 = mydata[which(mydata$Drug == "Erlotinib+bexaorotane"),]
+stan_data = list(N = 4, y = mydata2$y, S = mydata2$S)
+stan_fit3a = stan(file = "./Bayesian Computation/3aBinomialHierarchical.stan", data = stan_data,warmup = 500, iter = 1000, chains = 4, seed = 1)
+print(stan_fit3a)
+```
+
+Logistic model
+
+```{r}
+stan_data = list(N = 16, X = model.matrix(~Drug, data = mydata), y = mydata$y,S = mydata$S, D = 4, m = rep(seq(1:4), times = 4), M = 4)
+stan_fit3b = stan(file = "./Bayesian Computation/3bLogisticHierarchical.stan", data = stan_data,warmup = 500, iter = 1000, chains = 4, seed = 1)
+print(stan_fit3b)
+```
+

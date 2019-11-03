@@ -1,0 +1,49 @@
+---
+title: "Lab 2"
+author: "Xinyi Lin"
+date: "9/30/2019"
+output: html_document
+---
+
+## Question 1
+
+As $\alpha = 0.5$, $\beta = 1.5$, $x_1 = 1$, $f(x_2|x_1) = \frac{\Gamma(2)}{\Gamma(1.5)\Gamma(1.5)}\frac{\Gamma(1.5+x_2)\Gamma(1.5-x_2)}{\Gamma(4)}$
+
+```{r}
+pr_01 = gamma(2)*gamma(1.5)*gamma(1.5)/(gamma(1.5)*gamma(1.5)*gamma(4))
+pr_11 = gamma(2)*gamma(2.5)*gamma(0.5)/(gamma(1.5)*gamma(1.5)*gamma(4))
+```
+
+## Question 2
+
+```{r}
+x1 = 1
+a = 0.5 + x1
+b = 1.5
+pE = rbeta(1, a, b)  
+x2 = rbinom(1, 1, pE)
+```
+
+## Question 3
+
+```{r}
+x1 = 10
+n = 20
+a = 0.5 + x1
+b = 1.5 + n -x1
+pE = rbeta(1, a, b)
+x2 = rbinom(42, 1, pE)
+sum(x2)>12
+```
+
+```{r}
+set.seed(123)
+pr = rep(NA, 1000)
+for (i in 1:1000){
+  pE = rbeta(1, a, b)
+  x2 = rbinom(42, 1, pE)
+  pr[i] = ifelse(sum(x2)>11, 1, 0)
+}
+sum(pr)/1000
+```
+

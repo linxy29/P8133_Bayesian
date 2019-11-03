@@ -1,0 +1,87 @@
+---
+title: "Week5-Lab1"
+author: "Xinyi Lin"
+date: "10/7/2019"
+output: html_document
+---
+
+## Problem 1
+
+```{r}
+library(dfcrm)
+p = 0.25
+p0 = c(0.08, 0.14, 0.25, 0.37, 0.52)
+x = c(3,4,2,2,3)
+y = c(0,1,0,0,1)
+crmfit = crm(prior = p0, target = p, tox = y, level = x)
+crmfit$mtd
+crmfit$ptox
+plot(crmfit, ask=T)
+```
+
+## Problem 2
+
+```{r}
+PI = c(0.002, 0.010, 0.051, 0.23, 0.62)
+simfit = crmsim(PI, prior = p0, target = 0.25, n = 24, x0 = 3, nsim = 1)
+plot(simfit)
+simfit$MTD
+```
+
+### Question a
+
+```{r}
+PI = c(0.002, 0.010, 0.051, 0.23, 0.62)
+simfit = crmsim(PI, prior = p0, target = 0.25, n = 24, x0 = 3, nsim = 50)
+plot(simfit)
+simfit$MTD
+```
+
+### Question b
+
+```{r}
+PI = c(0.002, 0.010, 0.051, 0.23, 0.62)
+p0 = c(0.05, 0.15, 0.25, 0.50, 0.70)
+simfit = crmsim(PI, prior = p0, target = 0.25, n = 24, x0 = 3, nsim = 50)
+plot(simfit)
+simfit$MTD
+```
+
+### Question c
+
+```{r}
+my_p0 = c(0.002, 0.010, 0.051, 0.23, 0.62)
+simfit = crmsim(PI, prior = my_p0, target = 0.25, n = 24, x0 = 3, nsim = 50)
+plot(simfit)
+simfit$MTD
+```
+
+### Question d
+
+```{r}
+PI = c(0.002, 0.010, 0.05, 0.12, 0.25)
+simfit = crmsim(PI, prior = my_p0, target = 0.25, n = 24, x0 = 3, nsim = 50)
+plot(simfit)
+simfit$MTD
+```
+
+## Problem 3
+
+```{r}
+p0 = getprior(halfwidth = 0.06, target = 0.25, nu = 3, nlevel = 5)
+```
+
+```{r}
+PI = c(0.002, 0.010, 0.051, 0.23, 0.62)
+simfit = crmsim(PI, prior = p0, target = 0.25, n = 24, x0 = 3, nsim = 50)
+plot(simfit)
+simfit$MTD
+```
+
+```{r}
+PI = c(0.002, 0.010, 0.05, 0.12, 0.25)
+simfit = crmsim(PI, prior = p0, target = 0.25, n = 24, x0 = 3, nsim = 50)
+plot(simfit)
+simfit$MTD
+```
+

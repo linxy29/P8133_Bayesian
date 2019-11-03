@@ -1,0 +1,221 @@
+---
+title: "Assignment 2"
+author: "Xinyi Lin"
+date: "10/14/2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r,message=FALSE}
+library(tidyverse)
+```
+
+## Question 1
+
+Let trueDLT = true DLT probability, sp = selection probability, anTreat = average number of patients treated, anDLT = average number of patients with DLT. The table of the 3+3 design is shown below
+
+```{r}
+# Question 1
+get_res = function(i,p){
+  res = rbinom(3,1,p)
+  res = rbind(rep(i,3),res)
+  return(res)
+}
+dose1 = rbind(c(1:5), c(0.017, 0.043, 0.10, 0.22, 0.41))
+```
+
+```{r, eval=FALSE, include=FALSE}
+dose = dose1
+# one simulation
+set.seed(123)
+j = 1
+res = get_res(dose[1,j], dose[2,j])
+trial = res
+t_v = rep(NA,30)
+i = 0
+while (sum(res[2,])<=1) {
+    i = i+1
+    t_v[i] = j
+  if (sum(res[2,])==0){
+    j = j+1
+    res = get_res(dose[1,j], dose[2,j])
+    trial = cbind(trial, res)
+  } else if (sum(res[2,])==1 & t_v[i-1]!=j){
+    j = j
+    res = cbind(res, res = get_res(dose[1,j], dose[2,j]))
+  } else if (sum(res[2,])==1 & t_v[i-1]==j){
+    j = j+1
+    res = get_res(dose[1,j], dose[2,j])
+    trial = cbind(trial, res)
+  }
+}
+trial = cbind(trial,res)
+trial
+```
+
+```{r, eval=FALSE, include=FALSE}
+dose = dose1
+trail = c(0,0)
+# one simulation
+for (i in 1:5) {
+  res = get_res(dose[1,i], dose[2,i])
+  trail = cbind(trail, res)
+  if (sum(res[2,])>=2) {
+    mtd = i-1
+    break
+    } else if(sum(res[2,]==1)){
+      ext_res = get_res(dose[1,i], dose[2,i])
+      trail= cbind(trail,ext_res)
+      res = cbind(res, ext_res)
+    if(sum(res[2,])>=2) {
+      mtd = i-1
+      break
+    }
+    }
+  mtd = i
+}
+trail[,-1]
+mtd
+```
+
+```{r}
+sim3p3 = function(dose, N = 1000){
+  mtd_v = rep(NA,1000)
+  com_trail = c(0,0)
+  for (j in 1:N) {
+    mtd = 0
+    trail = c(0,0)
+    for (i in 1:5) {
+      res = get_res(dose[1,i], dose[2,i])
+      trail = cbind(trail, res)
+      if (sum(res[2,])>=2) {
+        mtd = i-1
+        break
+        } else if(sum(res[2,]==1)){
+          ext_res = get_res(dose[1,i], dose[2,i])
+          trail= cbind(trail,ext_res)
+          res = cbind(res, ext_res)
+          if(sum(res[2,])>=2) {
+            mtd = i-1
+            break
+          }
+        }
+      mtd = i
+    }
+    mtd_v[j] = mtd
+    com_trail = cbind(com_trail, trail[,-1])
+  }
+  trail_res = t(com_trail[,-1])
+  colnames(trail_res) = c("dose", "res")
+  return(list(mtd = mtd_v, trail_res = trail_res))
+}
+```
+
+```{r}
+show_table = function(sim3p3, dose){
+  sp = table(sim3p3$mtd)
+  per_m = sim3p3$trail_res %>% 
+    as.data.frame() %>% 
+    group_by(dose) %>% 
+    summarize(n = n(),
+              DLT = sum(res)) %>% 
+    mutate(anTreat = n/1000,
+           anDLT = DLT/1000,
+           s = as.numeric(sp[c(2:6)]),
+           sp = s/1000) 
+  per_m$trueDLT = as.numeric(dose[2,])
+  per_m %>% 
+    select(dose, trueDLT, sp, anTreat, anDLT) %>% 
+    knitr::kable()
+}
+```
+
+```{r, warning=FALSE}
+set.seed(123)
+sim3p31 = sim3p3(dose1)
+show_table(sim3p31,dose1)
+```
+
+## Question 2
+
+```{r}
+set.seed(123)
+# a
+dose2 = rbind(c(1:5), c(0.10, 0.22, 0.41, 0.64, 0.81))
+sim3p32 = sim3p3(dose2)
+show_table(sim3p32,dose2)
+# b
+dose3 = rbind(c(1:5), c(0.043, 0.10,0.22, 0.41, 0.64))
+sim3p33 = sim3p3(dose3)
+show_table(sim3p33, dose3)
+dose4 = rbind(c(1:5), c(0.007, 0.017, 0.043, 0.10, 0.22))
+sim3p34 = sim3p3(dose4)
+show_table(sim3p34, dose4)
+dose5 = rbind(c(1:5), c(0.003, 0.007, 0.017, 0.043, 0.10))
+sim3p35 = sim3p3(dose5)
+show_table(sim3p35, dose5)
+```
+
+## Question 3
+
+### a)
+
+```{r}
+show_CRM = function(sim, PI){
+  res_table = data.frame(dose = c(1:5), trueDLT = PI, sp = sim$MTD, anTreat = sim$level, anDLT = sim$tox)
+  res_table %>% 
+    knitr::kable()
+}
+```
+
+Perfomance metrics of 3+3 design and CRM with different does-toxicity curves are shown below.
+
+```{r}
+library(dfcrm)
+set.seed(123)
+p0 = c(0.08, 0.14, 0.25, 0.37, 0.52)
+# 1
+PI1 = c(0.017, 0.043, 0.010, 0.22, 0.41)
+sim1 = crmsim(PI1, p0, 0.1, 31, x0=3, nsim = 1000, count = FALSE)
+show_CRM(sim1, PI1)
+show_table(sim3p31,dose1)
+# 2
+PI2 = c(0.10, 0.22, 0.41, 0.64, 0.81)
+sim2 = crmsim(PI2, p0, 0.1, 31, x0=3, nsim = 1000, count = FALSE)
+show_CRM(sim2, PI2)
+show_table(sim3p32,dose2)
+# 3
+PI3 = c(0.043, 0.10, 0.22, 0.41, 0.64)
+sim3 = crmsim(PI3, p0, 0.1, 31, x0=3, nsim = 1000, count = FALSE)
+show_CRM(sim3, PI3)
+show_table(sim3p33,dose3)
+# 4
+PI4 = c(0.007, 0.017, 0.043, 0.10, 0.22)
+sim4 = crmsim(PI4, p0, 0.1, 31, x0=3, nsim = 1000, count = FALSE)
+show_CRM(sim4, PI4)
+show_table(sim3p34,dose4)
+# 5
+PI5 = c(0.003, 0.007, 0.017, 0.043, 0.10)
+sim5 = crmsim(PI5, p0, 0.1, 31, x0=3, nsim = 1000, count = FALSE)
+show_CRM(sim5, PI5)
+show_table(sim3p35,dose5)
+```
+
+By comparing performance metrics of 3+3 design and CRM design we can find that
+
+1) The selection probability of true MTD in CRM design is always the highest among 5 doses, while the dose with the highest selection probability in 3+3 design is always the dose near MTD.
+
+2) Average numbers of patients treated in 3+3 design is similar among each dose while in CRM, more people treated with MTD.
+
+3) Average numbers of patients with DLT in CRM overall are larger than those in 3+3 design.
+
+### b)
+
+```{r}
+PCS = c(sim1$MTD[3], sim2$MTD[1], sim3$MTD[2], sim4$MTD[4], sim5$MTD[5])
+mean(PCS)
+```
+
+The probability of correctly selecting(PCS) the MTD average over the five scenarios is `r mean(PCS)`.
+

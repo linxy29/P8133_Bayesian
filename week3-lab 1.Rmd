@@ -1,0 +1,70 @@
+---
+title: "Week 3"
+author: "Xinyi Lin"
+date: "9/23/2019"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+## Lab 1
+
+### Question 1
+
+```{r}
+N = 10000
+a = seq(0.5, 3, 0.5)
+b = seq(0.5，3， 0.5)
+a_v = rep(NA, 36)
+b_v = rep(NA, 36)
+mean_v = rep(NA, 36)
+var_v = rep(NA, 36)
+for (i in 1:6) {
+  for (j in 1:6) {
+    p = rbeta(N, a[i], b[y])
+    a_v[(i-1)*j+j] = a[i]
+    b_v[(i-1)*j+j] = b[j]
+    mean_v[(i-1)*j+j] = mean(p)
+    var_v[(i-1)*j+j] = var(p)
+  }
+}
+```
+
+```{r}
+a = 0.5
+b = 0.5
+p = rbeta(N, a, b)
+mean(p)
+var(p)
+hist(p, prob = T)
+```
+
+```{r}
+pbeta(0.25, 0.5, 1.5, lower.tail = FALSE)
+a_v = rep(NA, 36)
+b_v = rep(NA, 36)
+p_v = rep(NA, 36)
+for (i in 1:6) {
+  for (j in 1:6) {
+    a_v[(i-1)*j+j] = a[i]
+    b_v[(i-1)*j+j] = b[j]
+    p_v[(i-1)*j+j ] = pbeta(0.25, a[i], b[j], lower.tail = FALSE)
+  }
+}
+data2 = data.frame(a = a_v, b = b_v, p = p_v)
+head(data2)
+```
+
+### Question 3
+
+```{r}
+set.seed(123)
+pe = rbeta(N, 21.5, 42.5)
+ps = rbeta(N, 25, 75)
+sum(pe > (ps+0.15))/N
+```
+
+
