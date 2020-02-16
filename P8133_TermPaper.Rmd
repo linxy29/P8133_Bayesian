@@ -1,0 +1,98 @@
+---
+title: "FinalProject"
+author: "Xinyi Lin"
+date: "12/1/2019"
+output: html_document
+---
+```{r}
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r}
+library(readxl)
+sensitivity <- read_excel("./P8133_sensitivity.xlsx")
+head(sensitivity)
+```
+
+```{r}
+sensitivity %>% 
+  group_by(Scenario, L) %>% 
+  summarize(Percentage = sum(CORR)/20) %>% 
+  mutate(L = as.factor(L)) %>% 
+  ggplot(aes(Scenario, Percentage, fill = L)) +
+  geom_bar(stat = "identity", position = "dodge")
+```
+
+```{r}
+library(trialr)
+## compound
+p = c(0.40, 0.50, 0.60, 0.42, 0.52, 0.62, 0.45, 0.55, 0.65)
+size = rep(20, 9)
+numCorr_v1 = rep(NA, 30)
+for(i in 1:30) {
+  responses = rbinom(9, size, p)
+  fit = stan_hierarchical_response_thall(group_responses = responses, group_sizes = size, mu_mean = 1, mu_sd = 1, tau_alpha = 1, tau_beta = 0.5)
+  estprob = colMeans(as.data.frame(fit, pars='prob_response'))
+  est_max = order(estprob, decreasing = TRUE)[1:2]
+  numCorr = 0
+  if(6 %in% est_max) numCorr = numCorr+1
+  if(9 %in% est_max) numCorr = numCorr+1
+  numCorr_v1[i] = numCorr
+}
+```
+
+```{r}
+## backbone
+p = c(0.40, 0.42, 0.45, 0.50, 0.52, 0.55, 0.60, 0.62, 0.65)
+size = rep(20, 9)
+numCorr_v2 = rep(NA, 30)
+for (i in 1:30) {
+  responses = rbinom(9, size, p)
+  fit = stan_hierarchical_response_thall(group_responses = responses, group_sizes = size, mu_mean = 1, mu_sd = 1, tau_alpha = 1, tau_beta = 0.5)
+  estprob = colMeans(as.data.frame(fit, pars='prob_response'))
+  est_max = order(estprob, decreasing = TRUE)[1:2]
+  numCorr = 0
+  if(8 %in% est_max) numCorr = numCorr+1
+  if(9 %in% est_max) numCorr = numCorr+1
+  numCorr_v2[i] = numCorr
+}
+```
+
+```{r}
+## additive
+p = c(0.73, 0.85, 0.94, 0.64, 0.80, 0.92, 0.19, 0.55, 0.82)
+size = rep(20, 9)
+numCorr_v3 = rep(NA, 30)
+for (i in 1:30) {
+  responses = rbinom(9, size, p)
+  fit = stan_hierarchical_response_thall(group_responses = responses, group_sizes = size, mu_mean = 1, mu_sd = 1, tau_alpha = 1, tau_beta = 0.5)
+  estprob = colMeans(as.data.frame(fit, pars='prob_response'))
+  est_max = order(estprob, decreasing = TRUE)[1:2]
+  numCorr = 0
+  if(3 %in% est_max) numCorr = numCorr+1
+  if(6 %in% est_max) numCorr = numCorr+1
+  numCorr_v3[i] = numCorr
+}
+```
+
+## Compare two methods
+
+```{r}
+comp_PAS = sensitivity %>% 
+  mutate(method = rep("ComPAS", 90)) %>% 
+  select(Scenario, method, CORR)
+comp_HBM = data.frame(Scenario = c(rep("compound", 30), rep("backbone", 30), rep("additive", 30)),
+                      method = rep("BHM", 90),
+                      CORR = c(numCorr_v1, numCorr_v2, numCorr_v3))
+comp_data = rbind(comp_PAS, comp_HBM)
+```
+
+```{r}
+comp_data %>% 
+  group_by(Scenario, method) %>% 
+  summarize(Percentage = sum(CORR)/60) %>% 
+  ggplot(aes(Scenario, Percentage, fill = method)) +
+  geom_bar(stat = "identity", position = "dodge")
+```
+

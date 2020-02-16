@@ -1,0 +1,39 @@
+---
+title: "week 10"
+author: "Xinyi Lin"
+date: "11/11/2019"
+output: html_document
+---
+
+```{r}
+set.seed(123)
+n = 30
+d = 3
+rep_placebo = rbinom(1,n,0.3)
+rep_drug = rbinom(1,n,0.5)
+while (rep_placebo - rep_drug < d) {
+  
+}
+```
+
+n1:
+
+```{r}
+p0 = 0.3
+p1 = 0.5
+p_bar = (p0+p1)/2
+n1 = (sqrt(2*p_bar*(1-p_bar))*qnorm(0.975)+sqrt(p1*(1-p1)+p0*(1-p0))*qnorm(0.1))^2/(p1-p0)^2
+```
+
+```{r}
+p = rep(NA,51)
+for (i in 0:50) {  #i is the number of responses in control group
+  p_control = pbinom(i,50,0.3)
+  p_treat = pbinom(50-i,50,0.5)
+  p[i] = p_control*p_treat
+}
+i = 0:50
+res = rbind(i, p)
+
+```
+

@@ -1,0 +1,56 @@
+---
+title: "Test"
+author: "Xinyi Lin"
+date: "11/3/2019"
+output: html_document
+---
+
+```{r}
+#pA, pB follows Beta(1,1)
+alphaA = 1
+betaA = 1
+alphaB = 1
+betaB = 1
+alphaA = alphaA+3
+betaA = betaA+10-3
+alphaB = alphaB+1
+betaB = betaB+10-1
+sim_pA = rbeta(1000, alphaA, betaA)
+sim_pB = rbeta(1000, alphaB, betaB)
+rA = sum(sim_pA>sim_pB)/1000
+# block 2
+assignment2 = rbinom(30,1,rA) #1->A, 0->B
+alphaA = alphaA+3
+betaA = betaA+10-3
+alphaB = alphaB+1
+betaB = betaB+10-1
+sample_pA = rbeta(sum(assignment2),alphaA, betaA)
+resA = rep(NA, length(sample_pA))
+for (i in 1:length(sample_pA)) {
+  resA[i] = rbinom(1,1,sample_pA[i])
+}
+sum(resA)
+#block 3-cumulative
+
+sim_pA = rbeta(1000, alphaA, betaA)
+sim_pB = rbeta(1000, alphaB, betaB)
+rA = sum(sim_pA>sim_pB)/1000
+```
+
+```{r}
+M <- as.table(rbind(c(762, 327, 468), c(484, 239, 477)))
+dimnames(M) <- list(gender = c("F", "M"),
+                    party = c("Democrat","Independent", "Republican"))
+(Xsq <- chisq.test(M))  # Prints test summary
+M
+```
+
+```{r}
+m1 = matrix(c(3,7,1,9), nrow = 2, byrow = TRUE)
+m2 = matrix(c(8,15,1,6), nrow = 2, byrow = TRUE)
+m3 = matrix(c(16,10,2,2), nrow = 2, byrow = TRUE)
+m4 = matrix(c(33,6,1,0), nrow = 2, byrow = TRUE)
+myarray <- array(c(m1,m2,m3,m4),dim=c(2,2,4))
+mantelhaen.test(data30)
+```
+
